@@ -1,0 +1,237 @@
+heat_template_version: 2015-10-15
+parameters:
+  project_name: {description: Project name, type: string}
+  mgmt_net: {description: mgmt net for fxp0 and ubuntu, type: string}
+  linux_img: {description: FPC image, type: string}
+  linux_flav: {description: FPC flavor, type: string}
+  junos_img:  {description: RE image, type: string}
+  junos_flav: {description: RE flavor, type: string}
+  gateway_ip: {description: mgmt net default gw, type: string}
+
+resources:
+##############################################
+# re - pfe internal network
+##############################################
+{% for mx in mxs %}
+  bridge_net_re_pfe_{{mx.name}}:
+    properties:
+      name: 
+        str_replace:
+          template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_{{mx.name}}"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_network_subnet_re_pfe_{{mx.name}}:
+    properties:
+      cidr: 128.0.0.0/24
+      network_id: {get_resource: bridge_net_re_pfe_{{mx.name}}}
+      enable_dhcp: False
+      gateway_ip: 128.0.0.3
+      name: 
+        str_replace:
+          template: "Subnet_%proj%_128.0.0.0_24_%ident%_{{mx.name}}"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+    type: OS::Neutron::Subnet
+
+  bridge_net_fabric_{{mx.name}}:
+    properties:
+      name:
+        str_replace:
+          template: "Bridge_%proj%-%ident%_fabric_{{mx.name}}"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_net_subnet_fabric_{{mx.name}}:
+    properties:
+      cidr: 20.10.1.0/24 
+      network_id: {get_resource: bridge_net_fabric_{{mx.name}}}
+      name:
+        str_replace:
+          template: "Subnet_Bridge_%proj%-%ident%_fabric_{{mx.name}}"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+    type: OS::Neutron::Subnet
+
+{% endfor %}
+
+##############################################
+# p2p virtual networks 
+##############################################
+{% for p2plink in p2plinks %}
+  bridge_p2p_net_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}:
+    properties:
+      name:
+        str_replace:
+          template: "Bridge_%proj%-%ident%_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_p2p_net_subnet_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}:
+    properties:
+      cidr: 192.168.1.0/24
+      network_id: {get_resource: bridge_p2p_net_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}}
+      name:
+        str_replace:
+          template: "Subnet_Bridge_%proj%-%ident%_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+    type: OS::Neutron::Subnet
+{% endfor %}
+
+##############################################
+# MX RE - PFE ports
+##############################################
+{% for mx in mxs %}
+  external_port_fpc_{{mx.name}}:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_fpc_{{mx.name}}"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_fpc_{{mx.name}}:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_{{mx.name}}}
+      fixed_ips:
+        - ip_address: 128.0.0.16
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_fpc_{{mx.name}}"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  external_port_re_{{mx.name}}:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_fpc_{{mx.name}}"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_re_{{mx.name}}:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_{{mx.name}}}
+      fixed_ips:
+        - ip_address: 128.0.0.1
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_fpc_{{mx.name}}"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+{% endfor %}
+
+##############################################
+# MX data ports
+##############################################
+{% for mx in mxs %}
+{% for link in mx.links %}
+  data_port_fpc_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_p2p_net_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+{% endfor %}
+{% endfor %}
+
+
+##############################################
+# re vm
+##############################################
+{% for mx in mxs %}
+  re_{{mx.name}}:
+    properties:
+      config_drive: true
+      flavor: {get_param: junos_flav}
+      image: {get_param: junos_img}
+      metadata:
+        gateway: {get_param: gateway_ip} 
+        hostname: {{mx.name}}
+        hw.pci.link.0x60.irq: 10
+        netmask: '24'
+        re0_ip:
+          {get_attr: [external_port_re_{{mx.name}}, fixed_ips, 0, ip_address]}
+        re1_ip:
+          {get_attr: [external_port_re_{{mx.name}}, fixed_ips, 0, ip_address]}
+        vm_chassis_i2cid: "161"
+        vm_chassisname: {get_param: 'OS::stack_name'}
+        vm_chassname: {get_param: 'OS::stack_name'}
+        vm_i2cid: '0xBAA'
+        vm_instance: 0
+        vm_is_virtual: 1
+        vm_ore_present: 0
+        vm_retype: RE-VMX
+        vmchtype: mx240
+        vmtype: 0
+        console: vidconsole
+      name: 
+        str_replace:
+          template: "Instance_%proj%-%ident%_{{mx.name}}_re0"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_re_{{mx.name}}}
+      - port: {get_resource: internal_port_re_{{mx.name}}}
+      personality: {
+        /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
+    type: OS::Nova::Server
+
+  fpc_{{mx.name}}:
+    properties:
+      flavor: {get_param: linux_flav}
+      image: {get_param: linux_img}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_{{mx.name}}_fpc"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_fpc_{{mx.name}}}
+      - port: {get_resource: internal_port_fpc_{{mx.name}}}
+{% for link in mx.links %}
+      - port: {get_resource: data_port_fpc_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
+{% endfor %}
+    type: OS::Nova::Server
+{% endfor %}
+
