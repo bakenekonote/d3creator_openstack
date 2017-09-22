@@ -2,19 +2,20 @@ heat_template_version: 2015-10-15
 parameters:
   project_name: {description: Project name, type: string}
   mgmt_net: {description: mgmt net for fxp0 and ubuntu, type: string}
-  linux_img: {description: FPC image, type: string}
-  linux_flav: {description: FPC flavor, type: string}
-  junos_img:  {description: RE image, type: string}
-  junos_flav: {description: RE flavor, type: string}
+  ubuntu_img: {description: ubuntu image, type: string}
+  ubuntu_flav: {description: ubuntu flavor, type: string}
+  pfe_img: {description: FPC image, type: string}
+  pfe_flav: {description: FPC flavor, type: string}
+  re_img:  {description: RE image, type: string}
+  re_flav: {description: RE flavor, type: string}
   gateway_ip: {description: mgmt net default gw, type: string}
-
 resources:
 ##############################################
 # re - pfe internal network
 ##############################################
   bridge_net_re_pfe_R1:
     properties:
-      name: 
+      name:
         str_replace:
           template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_R1"
           params:
@@ -26,13 +27,13 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_network_subnet_re_pfe_R1:
+  bridge_net_subnet_re_pfe_R1:
     properties:
       cidr: 128.0.0.0/24
       network_id: {get_resource: bridge_net_re_pfe_R1}
       enable_dhcp: False
       gateway_ip: 128.0.0.3
-      name: 
+      name:
         str_replace:
           template: "Subnet_%proj%_128.0.0.0_24_%ident%_R1"
           params:
@@ -40,35 +41,9 @@ resources:
             '%proj%': {get_param: project_name}
     type: OS::Neutron::Subnet
 
-  bridge_net_fabric_R1:
-    properties:
-      name:
-        str_replace:
-          template: "Bridge_%proj%-%ident%_fabric_R1"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-      virtual_network_properties:
-        virtual_network_properties_forwarding_mode: l2
-        virtual_network_properties_rpf: disable
-      flood_unknown_unicast: true
-    type: OS::ContrailV2::VirtualNetwork
-
-  bridge_net_subnet_fabric_R1:
-    properties:
-      cidr: 20.10.1.0/24 
-      network_id: {get_resource: bridge_net_fabric_R1}
-      name:
-        str_replace:
-          template: "Subnet_Bridge_%proj%-%ident%_fabric_R1"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-    type: OS::Neutron::Subnet
-
   bridge_net_re_pfe_R2:
     properties:
-      name: 
+      name:
         str_replace:
           template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_R2"
           params:
@@ -80,13 +55,13 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_network_subnet_re_pfe_R2:
+  bridge_net_subnet_re_pfe_R2:
     properties:
       cidr: 128.0.0.0/24
       network_id: {get_resource: bridge_net_re_pfe_R2}
       enable_dhcp: False
       gateway_ip: 128.0.0.3
-      name: 
+      name:
         str_replace:
           template: "Subnet_%proj%_128.0.0.0_24_%ident%_R2"
           params:
@@ -94,35 +69,9 @@ resources:
             '%proj%': {get_param: project_name}
     type: OS::Neutron::Subnet
 
-  bridge_net_fabric_R2:
-    properties:
-      name:
-        str_replace:
-          template: "Bridge_%proj%-%ident%_fabric_R2"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-      virtual_network_properties:
-        virtual_network_properties_forwarding_mode: l2
-        virtual_network_properties_rpf: disable
-      flood_unknown_unicast: true
-    type: OS::ContrailV2::VirtualNetwork
-
-  bridge_net_subnet_fabric_R2:
-    properties:
-      cidr: 20.10.1.0/24 
-      network_id: {get_resource: bridge_net_fabric_R2}
-      name:
-        str_replace:
-          template: "Subnet_Bridge_%proj%-%ident%_fabric_R2"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-    type: OS::Neutron::Subnet
-
   bridge_net_re_pfe_R3:
     properties:
-      name: 
+      name:
         str_replace:
           template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_R3"
           params:
@@ -134,13 +83,13 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_network_subnet_re_pfe_R3:
+  bridge_net_subnet_re_pfe_R3:
     properties:
       cidr: 128.0.0.0/24
       network_id: {get_resource: bridge_net_re_pfe_R3}
       enable_dhcp: False
       gateway_ip: 128.0.0.3
-      name: 
+      name:
         str_replace:
           template: "Subnet_%proj%_128.0.0.0_24_%ident%_R3"
           params:
@@ -148,35 +97,9 @@ resources:
             '%proj%': {get_param: project_name}
     type: OS::Neutron::Subnet
 
-  bridge_net_fabric_R3:
-    properties:
-      name:
-        str_replace:
-          template: "Bridge_%proj%-%ident%_fabric_R3"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-      virtual_network_properties:
-        virtual_network_properties_forwarding_mode: l2
-        virtual_network_properties_rpf: disable
-      flood_unknown_unicast: true
-    type: OS::ContrailV2::VirtualNetwork
-
-  bridge_net_subnet_fabric_R3:
-    properties:
-      cidr: 20.10.1.0/24 
-      network_id: {get_resource: bridge_net_fabric_R3}
-      name:
-        str_replace:
-          template: "Subnet_Bridge_%proj%-%ident%_fabric_R3"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-    type: OS::Neutron::Subnet
-
   bridge_net_re_pfe_R4:
     properties:
-      name: 
+      name:
         str_replace:
           template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_R4"
           params:
@@ -188,13 +111,13 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_network_subnet_re_pfe_R4:
+  bridge_net_subnet_re_pfe_R4:
     properties:
       cidr: 128.0.0.0/24
       network_id: {get_resource: bridge_net_re_pfe_R4}
       enable_dhcp: False
       gateway_ip: 128.0.0.3
-      name: 
+      name:
         str_replace:
           template: "Subnet_%proj%_128.0.0.0_24_%ident%_R4"
           params:
@@ -202,37 +125,11 @@ resources:
             '%proj%': {get_param: project_name}
     type: OS::Neutron::Subnet
 
-  bridge_net_fabric_R4:
-    properties:
-      name:
-        str_replace:
-          template: "Bridge_%proj%-%ident%_fabric_R4"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-      virtual_network_properties:
-        virtual_network_properties_forwarding_mode: l2
-        virtual_network_properties_rpf: disable
-      flood_unknown_unicast: true
-    type: OS::ContrailV2::VirtualNetwork
-
-  bridge_net_subnet_fabric_R4:
-    properties:
-      cidr: 20.10.1.0/24 
-      network_id: {get_resource: bridge_net_fabric_R4}
-      name:
-        str_replace:
-          template: "Subnet_Bridge_%proj%-%ident%_fabric_R4"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-    type: OS::Neutron::Subnet
-
 
 ##############################################
-# p2p virtual networks 
+# virtual networks
 ##############################################
-  bridge_p2p_net_R1_R2_1:
+  bridge_net_R1_R2_1:
     properties:
       name:
         str_replace:
@@ -246,10 +143,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_R1_R2_1:
+  bridge_net_subnet_R1_R2_1:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_R1_R2_1}
+      cidr: 192.168.0.0/24
+      network_id: {get_resource: bridge_net_R1_R2_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_R1_R2_1"
@@ -257,7 +154,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_R1_R3_1:
+  bridge_net_R1_R3_1:
     properties:
       name:
         str_replace:
@@ -271,10 +168,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_R1_R3_1:
+  bridge_net_subnet_R1_R3_1:
     properties:
       cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_R1_R3_1}
+      network_id: {get_resource: bridge_net_R1_R3_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_R1_R3_1"
@@ -282,7 +179,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_R1_R3_2:
+  bridge_net_R1_R3_2:
     properties:
       name:
         str_replace:
@@ -296,10 +193,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_R1_R3_2:
+  bridge_net_subnet_R1_R3_2:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_R1_R3_2}
+      cidr: 192.168.2.0/24
+      network_id: {get_resource: bridge_net_R1_R3_2}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_R1_R3_2"
@@ -307,7 +204,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_R2_R3_1:
+  bridge_net_R2_R3_1:
     properties:
       name:
         str_replace:
@@ -321,10 +218,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_R2_R3_1:
+  bridge_net_subnet_R2_R3_1:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_R2_R3_1}
+      cidr: 192.168.3.0/24
+      network_id: {get_resource: bridge_net_R2_R3_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_R2_R3_1"
@@ -332,7 +229,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_R3_R4_1:
+  bridge_net_R3_R4_1:
     properties:
       name:
         str_replace:
@@ -346,10 +243,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_R3_R4_1:
+  bridge_net_subnet_R3_R4_1:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_R3_R4_1}
+      cidr: 192.168.4.0/24
+      network_id: {get_resource: bridge_net_R3_R4_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_R3_R4_1"
@@ -357,7 +254,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_U1_R1_1:
+  bridge_net_U1_R1_1:
     properties:
       name:
         str_replace:
@@ -371,10 +268,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_U1_R1_1:
+  bridge_net_subnet_U1_R1_1:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_U1_R1_1}
+      cidr: 192.168.5.0/24
+      network_id: {get_resource: bridge_net_U1_R1_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_U1_R1_1"
@@ -382,7 +279,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_U2_R2_1:
+  bridge_net_U2_R2_1:
     properties:
       name:
         str_replace:
@@ -396,10 +293,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_U2_R2_1:
+  bridge_net_subnet_U2_R2_1:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_U2_R2_1}
+      cidr: 192.168.6.0/24
+      network_id: {get_resource: bridge_net_U2_R2_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_U2_R2_1"
@@ -407,7 +304,7 @@ resources:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
     type: OS::Neutron::Subnet
-  bridge_p2p_net_U3_R4_1:
+  bridge_net_U3_R4_1:
     properties:
       name:
         str_replace:
@@ -421,10 +318,10 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_U3_R4_1:
+  bridge_net_subnet_U3_R4_1:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_U3_R4_1}
+      cidr: 192.168.7.0/24
+      network_id: {get_resource: bridge_net_U3_R4_1}
       name:
         str_replace:
           template: "Subnet_Bridge_%proj%-%ident%_U3_R4_1"
@@ -466,7 +363,7 @@ resources:
       network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_external_fpc_R1"
+          template: "Port_%proj%-%ident%_external_re_R1"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -479,7 +376,7 @@ resources:
         - ip_address: 128.0.0.1
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_internal_fpc_R1"
+          template: "Port_%proj%-%ident%_internal_re_R1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -514,7 +411,7 @@ resources:
       network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_external_fpc_R2"
+          template: "Port_%proj%-%ident%_external_re_R2"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -527,7 +424,7 @@ resources:
         - ip_address: 128.0.0.1
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_internal_fpc_R2"
+          template: "Port_%proj%-%ident%_internal_re_R2"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -562,7 +459,7 @@ resources:
       network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_external_fpc_R3"
+          template: "Port_%proj%-%ident%_external_re_R3"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -575,7 +472,7 @@ resources:
         - ip_address: 128.0.0.1
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_internal_fpc_R3"
+          template: "Port_%proj%-%ident%_internal_re_R3"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -610,7 +507,7 @@ resources:
       network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_external_fpc_R4"
+          template: "Port_%proj%-%ident%_external_re_R4"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -623,7 +520,7 @@ resources:
         - ip_address: 128.0.0.1
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_internal_fpc_R4"
+          template: "Port_%proj%-%ident%_internal_re_R4"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -635,10 +532,10 @@ resources:
   data_port_fpc_R1_R1_R2_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R1_R2_1}
+      network: {get_resource: bridge_net_R1_R2_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R1_R1_R2_1}"
+          template: "Port_%proj%-%ident%_data_R1_R1_R2_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -646,10 +543,10 @@ resources:
   data_port_fpc_R1_R1_R3_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R1_R3_1}
+      network: {get_resource: bridge_net_R1_R3_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R1_R1_R3_1}"
+          template: "Port_%proj%-%ident%_data_R1_R1_R3_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -657,10 +554,10 @@ resources:
   data_port_fpc_R1_R1_R3_2:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R1_R3_2}
+      network: {get_resource: bridge_net_R1_R3_2}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R1_R1_R3_2}"
+          template: "Port_%proj%-%ident%_data_R1_R1_R3_2"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -668,10 +565,10 @@ resources:
   data_port_fpc_R1_U1_R1_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_U1_R1_1}
+      network: {get_resource: bridge_net_U1_R1_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R1_U1_R1_1}"
+          template: "Port_%proj%-%ident%_data_R1_U1_R1_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -679,10 +576,10 @@ resources:
   data_port_fpc_R2_R1_R2_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R1_R2_1}
+      network: {get_resource: bridge_net_R1_R2_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R2_R1_R2_1}"
+          template: "Port_%proj%-%ident%_data_R2_R1_R2_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -690,10 +587,10 @@ resources:
   data_port_fpc_R2_R2_R3_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R2_R3_1}
+      network: {get_resource: bridge_net_R2_R3_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R2_R2_R3_1}"
+          template: "Port_%proj%-%ident%_data_R2_R2_R3_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -701,10 +598,10 @@ resources:
   data_port_fpc_R2_U2_R2_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_U2_R2_1}
+      network: {get_resource: bridge_net_U2_R2_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R2_U2_R2_1}"
+          template: "Port_%proj%-%ident%_data_R2_U2_R2_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -712,10 +609,10 @@ resources:
   data_port_fpc_R3_R1_R3_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R1_R3_1}
+      network: {get_resource: bridge_net_R1_R3_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R3_R1_R3_1}"
+          template: "Port_%proj%-%ident%_data_R3_R1_R3_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -723,10 +620,10 @@ resources:
   data_port_fpc_R3_R1_R3_2:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R1_R3_2}
+      network: {get_resource: bridge_net_R1_R3_2}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R3_R1_R3_2}"
+          template: "Port_%proj%-%ident%_data_R3_R1_R3_2"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -734,10 +631,10 @@ resources:
   data_port_fpc_R3_R2_R3_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R2_R3_1}
+      network: {get_resource: bridge_net_R2_R3_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R3_R2_R3_1}"
+          template: "Port_%proj%-%ident%_data_R3_R2_R3_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -745,10 +642,10 @@ resources:
   data_port_fpc_R3_R3_R4_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R3_R4_1}
+      network: {get_resource: bridge_net_R3_R4_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R3_R3_R4_1}"
+          template: "Port_%proj%-%ident%_data_R3_R3_R4_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -756,10 +653,10 @@ resources:
   data_port_fpc_R4_R3_R4_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_R3_R4_1}
+      network: {get_resource: bridge_net_R3_R4_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R4_R3_R4_1}"
+          template: "Port_%proj%-%ident%_data_R4_R3_R4_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -767,10 +664,10 @@ resources:
   data_port_fpc_R4_U3_R4_1:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_U3_R4_1}
+      network: {get_resource: bridge_net_U3_R4_1}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_R4_U3_R4_1}"
+          template: "Port_%proj%-%ident%_data_R4_U3_R4_1"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -778,15 +675,47 @@ resources:
 
 
 ##############################################
-# re vm
+# MX vm
 ##############################################
+
+  srvgroup_R1:
+    properties:
+      name: srvgroup_R1
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_R1:
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R1}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_R1_fpc"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_fpc_R1}
+      - port: {get_resource: internal_port_fpc_R1}
+      - port: {get_resource: data_port_fpc_R1_R1_R2_1}
+      - port: {get_resource: data_port_fpc_R1_R1_R3_1}
+      - port: {get_resource: data_port_fpc_R1_R1_R3_2}
+      - port: {get_resource: data_port_fpc_R1_U1_R1_1}
+    type: OS::Nova::Server
+
   re_R1:
+    depends_on: fpc_R1
     properties:
       config_drive: true
-      flavor: {get_param: junos_flav}
-      image: {get_param: junos_img}
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R1}
       metadata:
-        gateway: {get_param: gateway_ip} 
+        gateway: {get_param: gateway_ip}
         hostname: R1
         hw.pci.link.0x60.irq: 10
         netmask: '24'
@@ -805,7 +734,7 @@ resources:
         vmchtype: mx240
         vmtype: 0
         console: vidconsole
-      name: 
+      name:
         str_replace:
           template: "Instance_%proj%-%ident%_R1_re0"
           params:
@@ -818,31 +747,44 @@ resources:
         /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
     type: OS::Nova::Server
 
-  fpc_R1:
+
+  srvgroup_R2:
     properties:
-      flavor: {get_param: linux_flav}
-      image: {get_param: linux_img}
+      name: srvgroup_R2
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_R2:
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R2}
       name:
         str_replace:
-          template: "Instance_%proj%-%ident%_R1_fpc"
+          template: "Instance_%proj%-%ident%_R2_fpc"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
       networks:
-      - port: {get_resource: external_port_fpc_R1}
-      - port: {get_resource: internal_port_fpc_R1}
-      - port: {get_resource: data_port_fpc_R1_R1_R2_1}
-      - port: {get_resource: data_port_fpc_R1_R1_R3_1}
-      - port: {get_resource: data_port_fpc_R1_R1_R3_2}
-      - port: {get_resource: data_port_fpc_R1_U1_R1_1}
+      - port: {get_resource: external_port_fpc_R2}
+      - port: {get_resource: internal_port_fpc_R2}
+      - port: {get_resource: data_port_fpc_R2_R1_R2_1}
+      - port: {get_resource: data_port_fpc_R2_R2_R3_1}
+      - port: {get_resource: data_port_fpc_R2_U2_R2_1}
     type: OS::Nova::Server
+
   re_R2:
+    depends_on: fpc_R2
     properties:
       config_drive: true
-      flavor: {get_param: junos_flav}
-      image: {get_param: junos_img}
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R2}
       metadata:
-        gateway: {get_param: gateway_ip} 
+        gateway: {get_param: gateway_ip}
         hostname: R2
         hw.pci.link.0x60.irq: 10
         netmask: '24'
@@ -861,7 +803,7 @@ resources:
         vmchtype: mx240
         vmtype: 0
         console: vidconsole
-      name: 
+      name:
         str_replace:
           template: "Instance_%proj%-%ident%_R2_re0"
           params:
@@ -874,30 +816,45 @@ resources:
         /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
     type: OS::Nova::Server
 
-  fpc_R2:
+
+  srvgroup_R3:
     properties:
-      flavor: {get_param: linux_flav}
-      image: {get_param: linux_img}
+      name: srvgroup_R3
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_R3:
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R3}
       name:
         str_replace:
-          template: "Instance_%proj%-%ident%_R2_fpc"
+          template: "Instance_%proj%-%ident%_R3_fpc"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
       networks:
-      - port: {get_resource: external_port_fpc_R2}
-      - port: {get_resource: internal_port_fpc_R2}
-      - port: {get_resource: data_port_fpc_R2_R1_R2_1}
-      - port: {get_resource: data_port_fpc_R2_R2_R3_1}
-      - port: {get_resource: data_port_fpc_R2_U2_R2_1}
+      - port: {get_resource: external_port_fpc_R3}
+      - port: {get_resource: internal_port_fpc_R3}
+      - port: {get_resource: data_port_fpc_R3_R1_R3_1}
+      - port: {get_resource: data_port_fpc_R3_R1_R3_2}
+      - port: {get_resource: data_port_fpc_R3_R2_R3_1}
+      - port: {get_resource: data_port_fpc_R3_R3_R4_1}
     type: OS::Nova::Server
+
   re_R3:
+    depends_on: fpc_R3
     properties:
       config_drive: true
-      flavor: {get_param: junos_flav}
-      image: {get_param: junos_img}
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R3}
       metadata:
-        gateway: {get_param: gateway_ip} 
+        gateway: {get_param: gateway_ip}
         hostname: R3
         hw.pci.link.0x60.irq: 10
         netmask: '24'
@@ -916,7 +873,7 @@ resources:
         vmchtype: mx240
         vmtype: 0
         console: vidconsole
-      name: 
+      name:
         str_replace:
           template: "Instance_%proj%-%ident%_R3_re0"
           params:
@@ -929,31 +886,43 @@ resources:
         /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
     type: OS::Nova::Server
 
-  fpc_R3:
+
+  srvgroup_R4:
     properties:
-      flavor: {get_param: linux_flav}
-      image: {get_param: linux_img}
+      name: srvgroup_R4
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_R4:
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R4}
       name:
         str_replace:
-          template: "Instance_%proj%-%ident%_R3_fpc"
+          template: "Instance_%proj%-%ident%_R4_fpc"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
       networks:
-      - port: {get_resource: external_port_fpc_R3}
-      - port: {get_resource: internal_port_fpc_R3}
-      - port: {get_resource: data_port_fpc_R3_R1_R3_1}
-      - port: {get_resource: data_port_fpc_R3_R1_R3_2}
-      - port: {get_resource: data_port_fpc_R3_R2_R3_1}
-      - port: {get_resource: data_port_fpc_R3_R3_R4_1}
+      - port: {get_resource: external_port_fpc_R4}
+      - port: {get_resource: internal_port_fpc_R4}
+      - port: {get_resource: data_port_fpc_R4_R3_R4_1}
+      - port: {get_resource: data_port_fpc_R4_U3_R4_1}
     type: OS::Nova::Server
+
   re_R4:
+    depends_on: fpc_R4
     properties:
       config_drive: true
-      flavor: {get_param: junos_flav}
-      image: {get_param: junos_img}
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_R4}
       metadata:
-        gateway: {get_param: gateway_ip} 
+        gateway: {get_param: gateway_ip}
         hostname: R4
         hw.pci.link.0x60.irq: 10
         netmask: '24'
@@ -972,7 +941,7 @@ resources:
         vmchtype: mx240
         vmtype: 0
         console: vidconsole
-      name: 
+      name:
         str_replace:
           template: "Instance_%proj%-%ident%_R4_re0"
           params:
@@ -985,20 +954,202 @@ resources:
         /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
     type: OS::Nova::Server
 
-  fpc_R4:
+
+##############################################
+# ubuntu vm
+##############################################
+
+  external_port_ubuntu_U1:
+    type: OS::Neutron::Port
     properties:
-      flavor: {get_param: linux_flav}
-      image: {get_param: linux_img}
+      network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Instance_%proj%-%ident%_R4_fpc"
+          template: "Port_%proj%-%ident%_external_ubuntu_U1"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
+
+  data_port_ubuntu_U1_U1_R1_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_U1_R1_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_U1_U1_R1_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+
+  ubuntu_U1:
+    properties:
+      flavor: {get_param: ubuntu_flav}
+      image: {get_param: ubuntu_img}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_U1_ubuntu"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      user_data: {get_file: ubuntu_userdata}
+      user_data_format: RAW
       networks:
-      - port: {get_resource: external_port_fpc_R4}
-      - port: {get_resource: internal_port_fpc_R4}
-      - port: {get_resource: data_port_fpc_R4_R3_R4_1}
-      - port: {get_resource: data_port_fpc_R4_U3_R4_1}
+      - port: {get_resource: external_port_ubuntu_U1}
+      - port: {get_resource: data_port_ubuntu_U1_U1_R1_1}
     type: OS::Nova::Server
+
+
+  external_port_ubuntu_U2:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_ubuntu_U2"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  data_port_ubuntu_U2_U2_R2_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_U2_R2_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_U2_U2_R2_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+
+  ubuntu_U2:
+    properties:
+      flavor: {get_param: ubuntu_flav}
+      image: {get_param: ubuntu_img}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_U2_ubuntu"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      user_data: {get_file: ubuntu_userdata}
+      user_data_format: RAW
+      networks:
+      - port: {get_resource: external_port_ubuntu_U2}
+      - port: {get_resource: data_port_ubuntu_U2_U2_R2_1}
+    type: OS::Nova::Server
+
+
+  external_port_ubuntu_U3:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_ubuntu_U3"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  data_port_ubuntu_U3_U3_R4_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_U3_R4_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_U3_U3_R4_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+
+  ubuntu_U3:
+    properties:
+      flavor: {get_param: ubuntu_flav}
+      image: {get_param: ubuntu_img}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_U3_ubuntu"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      user_data: {get_file: ubuntu_userdata}
+      user_data_format: RAW
+      networks:
+      - port: {get_resource: external_port_ubuntu_U3}
+      - port: {get_resource: data_port_ubuntu_U3_U3_R4_1}
+    type: OS::Nova::Server
+
+
+outputs:
+  ubuntu_U1_mgmt_ip:
+    description: The mgmt IP address assigned to the VM
+    value: { get_attr: [external_port_ubuntu_U1, fixed_ips, 0, ip_address] }
+  ubuntu_U1_U1_R1_1_ip:
+    description: The data link IP address assigned to the VM
+    value: { get_attr: [data_port_ubuntu_U1_U1_R1_1, fixed_ips, 0, ip_address] }
+  ubuntu_U2_mgmt_ip:
+    description: The mgmt IP address assigned to the VM
+    value: { get_attr: [external_port_ubuntu_U2, fixed_ips, 0, ip_address] }
+  ubuntu_U2_U2_R2_1_ip:
+    description: The data link IP address assigned to the VM
+    value: { get_attr: [data_port_ubuntu_U2_U2_R2_1, fixed_ips, 0, ip_address] }
+  ubuntu_U3_mgmt_ip:
+    description: The mgmt IP address assigned to the VM
+    value: { get_attr: [external_port_ubuntu_U3, fixed_ips, 0, ip_address] }
+  ubuntu_U3_U3_R4_1_ip:
+    description: The data link IP address assigned to the VM
+    value: { get_attr: [data_port_ubuntu_U3_U3_R4_1, fixed_ips, 0, ip_address] }
+  mx_R1_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_R1, fixed_ips, 0, ip_address] }
+  mx_R1_fpc_R1_R2_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R1_R1_R2_1, fixed_ips, 0, ip_address] }
+  mx_R1_fpc_R1_R3_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R1_R1_R3_1, fixed_ips, 0, ip_address] }
+  mx_R1_fpc_R1_R3_2_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R1_R1_R3_2, fixed_ips, 0, ip_address] }
+  mx_R1_fpc_U1_R1_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R1_U1_R1_1, fixed_ips, 0, ip_address] }
+  mx_R2_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_R2, fixed_ips, 0, ip_address] }
+  mx_R2_fpc_R1_R2_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R2_R1_R2_1, fixed_ips, 0, ip_address] }
+  mx_R2_fpc_R2_R3_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R2_R2_R3_1, fixed_ips, 0, ip_address] }
+  mx_R2_fpc_U2_R2_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R2_U2_R2_1, fixed_ips, 0, ip_address] }
+  mx_R3_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_R3, fixed_ips, 0, ip_address] }
+  mx_R3_fpc_R1_R3_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R3_R1_R3_1, fixed_ips, 0, ip_address] }
+  mx_R3_fpc_R1_R3_2_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R3_R1_R3_2, fixed_ips, 0, ip_address] }
+  mx_R3_fpc_R2_R3_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R3_R2_R3_1, fixed_ips, 0, ip_address] }
+  mx_R3_fpc_R3_R4_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R3_R3_R4_1, fixed_ips, 0, ip_address] }
+  mx_R4_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_R4, fixed_ips, 0, ip_address] }
+  mx_R4_fpc_R3_R4_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R4_R3_R4_1, fixed_ips, 0, ip_address] }
+  mx_R4_fpc_U3_R4_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_R4_U3_R4_1, fixed_ips, 0, ip_address] }
 

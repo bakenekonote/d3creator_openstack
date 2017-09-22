@@ -1,0 +1,587 @@
+heat_template_version: 2015-10-15
+parameters:
+  project_name: {description: Project name, type: string}
+  mgmt_net: {description: mgmt net for fxp0 and ubuntu, type: string}
+  ubuntu_img: {description: ubuntu image, type: string}
+  ubuntu_flav: {description: ubuntu flavor, type: string}
+  pfe_img: {description: FPC image, type: string}
+  pfe_flav: {description: FPC flavor, type: string}
+  re_img:  {description: RE image, type: string}
+  re_flav: {description: RE flavor, type: string}
+  gateway_ip: {description: mgmt net default gw, type: string}
+resources:
+##############################################
+# re - pfe internal network
+##############################################
+  bridge_net_re_pfe_mx1:
+    properties:
+      name:
+        str_replace:
+          template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_mx1"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_net_subnet_re_pfe_mx1:
+    properties:
+      cidr: 128.0.0.0/24
+      network_id: {get_resource: bridge_net_re_pfe_mx1}
+      enable_dhcp: False
+      gateway_ip: 128.0.0.3
+      name:
+        str_replace:
+          template: "Subnet_%proj%_128.0.0.0_24_%ident%_mx1"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+    type: OS::Neutron::Subnet
+
+  bridge_net_re_pfe_mx2:
+    properties:
+      name:
+        str_replace:
+          template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_mx2"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_net_subnet_re_pfe_mx2:
+    properties:
+      cidr: 128.0.0.0/24
+      network_id: {get_resource: bridge_net_re_pfe_mx2}
+      enable_dhcp: False
+      gateway_ip: 128.0.0.3
+      name:
+        str_replace:
+          template: "Subnet_%proj%_128.0.0.0_24_%ident%_mx2"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+    type: OS::Neutron::Subnet
+
+  bridge_net_re_pfe_mx3:
+    properties:
+      name:
+        str_replace:
+          template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_mx3"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_net_subnet_re_pfe_mx3:
+    properties:
+      cidr: 128.0.0.0/24
+      network_id: {get_resource: bridge_net_re_pfe_mx3}
+      enable_dhcp: False
+      gateway_ip: 128.0.0.3
+      name:
+        str_replace:
+          template: "Subnet_%proj%_128.0.0.0_24_%ident%_mx3"
+          params:
+            '%ident%': {get_param: 'OS::stack_name'}
+            '%proj%': {get_param: project_name}
+    type: OS::Neutron::Subnet
+
+
+##############################################
+# virtual networks
+##############################################
+  bridge_net_mx1_mx2_1:
+    properties:
+      name:
+        str_replace:
+          template: "Bridge_%proj%-%ident%_mx1_mx2_1"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_net_subnet_mx1_mx2_1:
+    properties:
+      cidr: 192.168.0.0/24
+      network_id: {get_resource: bridge_net_mx1_mx2_1}
+      name:
+        str_replace:
+          template: "Subnet_Bridge_%proj%-%ident%_mx1_mx2_1"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+    type: OS::Neutron::Subnet
+  bridge_net_mx2_mx3_1:
+    properties:
+      name:
+        str_replace:
+          template: "Bridge_%proj%-%ident%_mx2_mx3_1"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      virtual_network_properties:
+        virtual_network_properties_forwarding_mode: l2
+        virtual_network_properties_rpf: disable
+      flood_unknown_unicast: true
+    type: OS::ContrailV2::VirtualNetwork
+
+  bridge_net_subnet_mx2_mx3_1:
+    properties:
+      cidr: 192.168.1.0/24
+      network_id: {get_resource: bridge_net_mx2_mx3_1}
+      name:
+        str_replace:
+          template: "Subnet_Bridge_%proj%-%ident%_mx2_mx3_1"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+    type: OS::Neutron::Subnet
+
+##############################################
+# MX RE - PFE ports
+##############################################
+  external_port_fpc_mx1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_fpc_mx1"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_fpc_mx1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_mx1}
+      fixed_ips:
+        - ip_address: 128.0.0.16
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_fpc_mx1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  external_port_re_mx1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_re_mx1"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_re_mx1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_mx1}
+      fixed_ips:
+        - ip_address: 128.0.0.1
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_re_mx1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  external_port_fpc_mx2:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_fpc_mx2"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_fpc_mx2:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_mx2}
+      fixed_ips:
+        - ip_address: 128.0.0.16
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_fpc_mx2"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  external_port_re_mx2:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_re_mx2"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_re_mx2:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_mx2}
+      fixed_ips:
+        - ip_address: 128.0.0.1
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_re_mx2"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  external_port_fpc_mx3:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_fpc_mx3"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_fpc_mx3:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_mx3}
+      fixed_ips:
+        - ip_address: 128.0.0.16
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_fpc_mx3"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  external_port_re_mx3:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_param: mgmt_net}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_external_re_mx3"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+
+  internal_port_re_mx3:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_re_pfe_mx3}
+      fixed_ips:
+        - ip_address: 128.0.0.1
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_internal_re_mx3"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+
+##############################################
+# MX data ports
+##############################################
+  data_port_fpc_mx1_mx1_mx2_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_mx1_mx2_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_mx1_mx1_mx2_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  data_port_fpc_mx2_mx1_mx2_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_mx1_mx2_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_mx2_mx1_mx2_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  data_port_fpc_mx2_mx2_mx3_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_mx2_mx3_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_mx2_mx2_mx3_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+  data_port_fpc_mx3_mx2_mx3_1:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_mx2_mx3_1}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_mx3_mx2_mx3_1"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
+
+
+##############################################
+# MX vm
+##############################################
+
+  srvgroup_mx1:
+    properties:
+      name: srvgroup_mx1
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_mx1:
+    depends_on: srvgroup_mx1
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_mx1}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_mx1_fpc"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_fpc_mx1}
+      - port: {get_resource: internal_port_fpc_mx1}
+      - port: {get_resource: data_port_fpc_mx1_mx1_mx2_1}
+    type: OS::Nova::Server
+
+  re_mx1:
+    depends_on: fpc_mx1
+    properties:
+      config_drive: true
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_mx1}
+      metadata:
+        gateway: {get_param: gateway_ip}
+        hostname: mx1
+        hw.pci.link.0x60.irq: 10
+        netmask: '24'
+        re0_ip:
+          {get_attr: [external_port_re_mx1, fixed_ips, 0, ip_address]}
+        re1_ip:
+          {get_attr: [external_port_re_mx1, fixed_ips, 0, ip_address]}
+        vm_chassis_i2cid: "161"
+        vm_chassisname: {get_param: 'OS::stack_name'}
+        vm_chassname: {get_param: 'OS::stack_name'}
+        vm_i2cid: '0xBAA'
+        vm_instance: 0
+        vm_is_virtual: 1
+        vm_ore_present: 0
+        vm_retype: RE-VMX
+        vmchtype: mx240
+        vmtype: 0
+        console: vidconsole
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_mx1_re0"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_re_mx1}
+      - port: {get_resource: internal_port_re_mx1}
+      personality: {
+        /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
+    type: OS::Nova::Server
+
+
+  srvgroup_mx2:
+    properties:
+      name: srvgroup_mx2
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_mx2:
+    depends_on: srvgroup_mx2
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_mx2}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_mx2_fpc"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_fpc_mx2}
+      - port: {get_resource: internal_port_fpc_mx2}
+      - port: {get_resource: data_port_fpc_mx2_mx1_mx2_1}
+      - port: {get_resource: data_port_fpc_mx2_mx2_mx3_1}
+    type: OS::Nova::Server
+
+  re_mx2:
+    depends_on: fpc_mx2
+    properties:
+      config_drive: true
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_mx2}
+      metadata:
+        gateway: {get_param: gateway_ip}
+        hostname: mx2
+        hw.pci.link.0x60.irq: 10
+        netmask: '24'
+        re0_ip:
+          {get_attr: [external_port_re_mx2, fixed_ips, 0, ip_address]}
+        re1_ip:
+          {get_attr: [external_port_re_mx2, fixed_ips, 0, ip_address]}
+        vm_chassis_i2cid: "161"
+        vm_chassisname: {get_param: 'OS::stack_name'}
+        vm_chassname: {get_param: 'OS::stack_name'}
+        vm_i2cid: '0xBAA'
+        vm_instance: 0
+        vm_is_virtual: 1
+        vm_ore_present: 0
+        vm_retype: RE-VMX
+        vmchtype: mx240
+        vmtype: 0
+        console: vidconsole
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_mx2_re0"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_re_mx2}
+      - port: {get_resource: internal_port_re_mx2}
+      personality: {
+        /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
+    type: OS::Nova::Server
+
+
+  srvgroup_mx3:
+    properties:
+      name: srvgroup_mx3
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_mx3:
+    depends_on: srvgroup_mx3
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_mx3}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_mx3_fpc"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_fpc_mx3}
+      - port: {get_resource: internal_port_fpc_mx3}
+      - port: {get_resource: data_port_fpc_mx3_mx2_mx3_1}
+    type: OS::Nova::Server
+
+  re_mx3:
+    depends_on: fpc_mx3
+    properties:
+      config_drive: true
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_mx3}
+      metadata:
+        gateway: {get_param: gateway_ip}
+        hostname: mx3
+        hw.pci.link.0x60.irq: 10
+        netmask: '24'
+        re0_ip:
+          {get_attr: [external_port_re_mx3, fixed_ips, 0, ip_address]}
+        re1_ip:
+          {get_attr: [external_port_re_mx3, fixed_ips, 0, ip_address]}
+        vm_chassis_i2cid: "161"
+        vm_chassisname: {get_param: 'OS::stack_name'}
+        vm_chassname: {get_param: 'OS::stack_name'}
+        vm_i2cid: '0xBAA'
+        vm_instance: 0
+        vm_is_virtual: 1
+        vm_ore_present: 0
+        vm_retype: RE-VMX
+        vmchtype: mx240
+        vmtype: 0
+        console: vidconsole
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_mx3_re0"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_re_mx3}
+      - port: {get_resource: internal_port_re_mx3}
+      personality: {
+        /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
+    type: OS::Nova::Server
+
+
+##############################################
+# ubuntu vm
+##############################################
+
+outputs:
+  mx_mx1_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_mx1, fixed_ips, 0, ip_address] }
+  mx_mx1_fpc_mx1_mx2_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_mx1_mx1_mx2_1, fixed_ips, 0, ip_address] }
+  mx_mx2_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_mx2, fixed_ips, 0, ip_address] }
+  mx_mx2_fpc_mx1_mx2_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_mx2_mx1_mx2_1, fixed_ips, 0, ip_address] }
+  mx_mx2_fpc_mx2_mx3_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_mx2_mx2_mx3_1, fixed_ips, 0, ip_address] }
+  mx_mx3_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_mx3, fixed_ips, 0, ip_address] }
+  mx_mx3_fpc_mx2_mx3_1_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_mx3_mx2_mx3_1, fixed_ips, 0, ip_address] }
+

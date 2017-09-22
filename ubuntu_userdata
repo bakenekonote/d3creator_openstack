@@ -1,0 +1,19 @@
+#cloud-config
+password: lab123
+chpasswd:
+  expire: False
+ssh_pwauth: True
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDloMdJQUiGspygta3dtxuAOr/eTZ9YStiocgLGAHhgQcAzlpjUazp2SQ3hD8zPJMbt/8i0tCgvlnBYFDea5Z2jRciIehbIA64l2m/FipkXEBAIieCHMckfdSame0prmN8uDUrHVb2PN4VkGVKDcqPOxOoSXt1Pm8kd3gvPAaCm57QuuZLV/wQztKk42snN7zX71+nxxxMHLsRd+PMoT3C3pypBZs/8WWuLqdRZdEp/QWwsOJlaqtMgCdPKxcR+9WNVFzf9D56KZ8HWxN8EOyaeyICBZXCBaAQgg2hzckV709/MG4Xmz6BPiyldFLoAYManygDMwHo0Uayg+2jorzRj jnpr demo ssh key
+apt:
+  preserve_sources_list: False
+  primary:
+    - arches: [default]
+      uri: http://ftp.cuhk.edu.hk/pub/Linux/ubuntu/
+  sources_list: | # written by cloud-init custom template
+    deb $PRIMARY $RELEASE main universe multiverse restricted
+    deb $PRIMARY $RELEASE-security main universe multiverse restricted
+package_update: true
+package_upgrade: true
+packages:
+ - python

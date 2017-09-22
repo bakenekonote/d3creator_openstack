@@ -2,12 +2,13 @@ heat_template_version: 2015-10-15
 parameters:
   project_name: {description: Project name, type: string}
   mgmt_net: {description: mgmt net for fxp0 and ubuntu, type: string}
-  linux_img: {description: FPC image, type: string}
-  linux_flav: {description: FPC flavor, type: string}
-  junos_img:  {description: RE image, type: string}
-  junos_flav: {description: RE flavor, type: string}
+  ubuntu_img: {description: ubuntu image, type: string}
+  ubuntu_flav: {description: ubuntu flavor, type: string}
+  pfe_img: {description: FPC image, type: string}
+  pfe_flav: {description: FPC flavor, type: string}
+  re_img:  {description: RE image, type: string}
+  re_flav: {description: RE flavor, type: string}
   gateway_ip: {description: mgmt net default gw, type: string}
-
 resources:
 ##############################################
 # re - pfe internal network
@@ -15,7 +16,7 @@ resources:
 {% for mx in mxs %}
   bridge_net_re_pfe_{{mx.name}}:
     properties:
-      name: 
+      name:
         str_replace:
           template: "Network_%proj%_Internal-%ident%-vfp0-to-vcp0_{{mx.name}}"
           params:
@@ -27,13 +28,13 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_network_subnet_re_pfe_{{mx.name}}:
+  bridge_net_subnet_re_pfe_{{mx.name}}:
     properties:
       cidr: 128.0.0.0/24
       network_id: {get_resource: bridge_net_re_pfe_{{mx.name}}}
       enable_dhcp: False
       gateway_ip: 128.0.0.3
-      name: 
+      name:
         str_replace:
           template: "Subnet_%proj%_128.0.0.0_24_%ident%_{{mx.name}}"
           params:
@@ -41,43 +42,17 @@ resources:
             '%proj%': {get_param: project_name}
     type: OS::Neutron::Subnet
 
-  bridge_net_fabric_{{mx.name}}:
-    properties:
-      name:
-        str_replace:
-          template: "Bridge_%proj%-%ident%_fabric_{{mx.name}}"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-      virtual_network_properties:
-        virtual_network_properties_forwarding_mode: l2
-        virtual_network_properties_rpf: disable
-      flood_unknown_unicast: true
-    type: OS::ContrailV2::VirtualNetwork
-
-  bridge_net_subnet_fabric_{{mx.name}}:
-    properties:
-      cidr: 20.10.1.0/24 
-      network_id: {get_resource: bridge_net_fabric_{{mx.name}}}
-      name:
-        str_replace:
-          template: "Subnet_Bridge_%proj%-%ident%_fabric_{{mx.name}}"
-          params:
-            '%proj%': {get_param: project_name}
-            '%ident%': {get_param: 'OS::stack_name'}
-    type: OS::Neutron::Subnet
-
 {% endfor %}
 
 ##############################################
-# p2p virtual networks 
+# virtual networks
 ##############################################
-{% for p2plink in p2plinks %}
-  bridge_p2p_net_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}:
+{% for link in links %}
+  bridge_net_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}:
     properties:
       name:
         str_replace:
-          template: "Bridge_%proj%-%ident%_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}"
+          template: "Bridge_%proj%-%ident%_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -87,13 +62,13 @@ resources:
       flood_unknown_unicast: true
     type: OS::ContrailV2::VirtualNetwork
 
-  bridge_p2p_net_subnet_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}:
+  bridge_net_subnet_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}:
     properties:
-      cidr: 192.168.1.0/24
-      network_id: {get_resource: bridge_p2p_net_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}}
+      cidr: {{link.subnet}}
+      network_id: {get_resource: bridge_net_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
       name:
         str_replace:
-          template: "Subnet_Bridge_%proj%-%ident%_{{p2plink.source.name}}_{{p2plink.target.name}}_{{p2plink.linknum}}"
+          template: "Subnet_Bridge_%proj%-%ident%_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -134,7 +109,7 @@ resources:
       network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_external_fpc_{{mx.name}}"
+          template: "Port_%proj%-%ident%_external_re_{{mx.name}}"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
@@ -147,7 +122,7 @@ resources:
         - ip_address: 128.0.0.1
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_internal_fpc_{{mx.name}}"
+          template: "Port_%proj%-%ident%_internal_re_{{mx.name}}"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -162,10 +137,10 @@ resources:
   data_port_fpc_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}:
     type: OS::Neutron::Port
     properties:
-      network: {get_resource: bridge_p2p_net_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
+      network: {get_resource: bridge_net_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
       name:
         str_replace:
-          template: "Port_%proj%-%ident%_data_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}"
+          template: "Port_%proj%-%ident%_data_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}"
           params:
               '%proj%': {get_param: project_name}
               '%ident%': {get_param: 'OS::stack_name'}
@@ -175,16 +150,48 @@ resources:
 
 
 ##############################################
-# re vm
+# MX vm
 ##############################################
 {% for mx in mxs %}
+
+  srvgroup_{{mx.name}}:
+    properties:
+      name: srvgroup_{{mx.name}}
+      policies: [ 'affinity' ]
+    type: OS::Nova::ServerGroup
+
+  # create the fpc before the re to cater for the hugemem requirements
+  fpc_{{mx.name}}:
+    depends_on: srvgroup_{{mx.name}}
+    properties:
+      flavor: {get_param: pfe_flav}
+      image: {get_param: pfe_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_{{mx.name}}}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_{{mx.name}}_fpc"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      networks:
+      - port: {get_resource: external_port_fpc_{{mx.name}}}
+      - port: {get_resource: internal_port_fpc_{{mx.name}}}
+{% for link in mx.links %}
+      - port: {get_resource: data_port_fpc_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
+{% endfor %}
+    type: OS::Nova::Server
+
   re_{{mx.name}}:
+    depends_on: fpc_{{mx.name}}
     properties:
       config_drive: true
-      flavor: {get_param: junos_flav}
-      image: {get_param: junos_img}
+      flavor: {get_param: re_flav}
+      image: {get_param: re_img}
+      scheduler_hints:
+        group: {get_resource: srvgroup_{{mx.name}}}
       metadata:
-        gateway: {get_param: gateway_ip} 
+        gateway: {get_param: gateway_ip}
         hostname: {{mx.name}}
         hw.pci.link.0x60.irq: 10
         netmask: '24'
@@ -203,7 +210,7 @@ resources:
         vmchtype: mx240
         vmtype: 0
         console: vidconsole
-      name: 
+      name:
         str_replace:
           template: "Instance_%proj%-%ident%_{{mx.name}}_re0"
           params:
@@ -216,22 +223,77 @@ resources:
         /var/db/cumulus/baseline_config.template: {get_file: vmx_baseline.conf}}
     type: OS::Nova::Server
 
-  fpc_{{mx.name}}:
+{% endfor %}
+
+##############################################
+# ubuntu vm
+##############################################
+{% for ubuntu in ubuntus %}
+
+  external_port_ubuntu_{{ubuntu.name}}:
+    type: OS::Neutron::Port
     properties:
-      flavor: {get_param: linux_flav}
-      image: {get_param: linux_img}
+      network: {get_param: mgmt_net}
       name:
         str_replace:
-          template: "Instance_%proj%-%ident%_{{mx.name}}_fpc"
+          template: "Port_%proj%-%ident%_external_ubuntu_{{ubuntu.name}}"
           params:
             '%proj%': {get_param: project_name}
             '%ident%': {get_param: 'OS::stack_name'}
-      networks:
-      - port: {get_resource: external_port_fpc_{{mx.name}}}
-      - port: {get_resource: internal_port_fpc_{{mx.name}}}
-{% for link in mx.links %}
-      - port: {get_resource: data_port_fpc_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
-{% endfor %}
-    type: OS::Nova::Server
+
+{% for link in ubuntu.links %}
+  data_port_ubuntu_{{ubuntu.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}:
+    type: OS::Neutron::Port
+    properties:
+      network: {get_resource: bridge_net_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
+      name:
+        str_replace:
+          template: "Port_%proj%-%ident%_data_{{ubuntu.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}"
+          params:
+              '%proj%': {get_param: project_name}
+              '%ident%': {get_param: 'OS::stack_name'}
+
 {% endfor %}
 
+  ubuntu_{{ubuntu.name}}:
+    properties:
+      flavor: {get_param: ubuntu_flav}
+      image: {get_param: ubuntu_img}
+      name:
+        str_replace:
+          template: "Instance_%proj%-%ident%_{{ubuntu.name}}_ubuntu"
+          params:
+            '%proj%': {get_param: project_name}
+            '%ident%': {get_param: 'OS::stack_name'}
+      user_data: {get_file: ubuntu_userdata}
+      user_data_format: RAW
+      networks:
+      - port: {get_resource: external_port_ubuntu_{{ubuntu.name}}}
+{% for link in ubuntu.links %}
+      - port: {get_resource: data_port_ubuntu_{{ubuntu.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}}
+{% endfor %}
+    type: OS::Nova::Server
+
+{% endfor %}
+
+outputs:
+{% for ubuntu in ubuntus %}
+  ubuntu_{{ubuntu.name}}_mgmt_ip:
+    description: The mgmt IP address assigned to the VM
+    value: { get_attr: [external_port_ubuntu_{{ubuntu.name}}, fixed_ips, 0, ip_address] }
+{% for link in ubuntu.links %}
+  ubuntu_{{ubuntu.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}_ip:
+    description: The data link IP address assigned to the VM
+    value: { get_attr: [data_port_ubuntu_{{ubuntu.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}, fixed_ips, 0, ip_address] }
+{% endfor %}
+{% endfor %}
+{% for mx in mxs %}
+  mx_{{mx.name}}_mgmt_ip:
+    description: The IP address assigned to the MX Re VM
+    value: { get_attr: [external_port_re_{{mx.name}}, fixed_ips, 0, ip_address] }
+{% for link in mx.links %}
+  mx_{{mx.name}}_fpc_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}_ip:
+    description: The IP address assigned to the mx data port
+    value: { get_attr: [data_port_fpc_{{mx.name}}_{{link.source.name}}_{{link.target.name}}_{{link.linknum}}, fixed_ips, 0, ip_address] }
+{% endfor %}
+{% endfor %}
